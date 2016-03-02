@@ -229,11 +229,11 @@ summary(best.mod.x1)
 ```
 
 ### Ordination *X*-axis
-![Fig. 5](figures/x1_anova.png =x150)
+![Fig. 5](figures/x1_anova.png =x150 "X1 ANOVA")
 
 Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean shoot density*. There are also *sample type* by *longest leaf*, *mean shoot density* and *mesograzer biomass* interactions, indicating that these were correlated with different *sample types* in different ways. Let's explore the model results a bit closer.
 
-![Fig. 6](figures/x1_summary.png =x260)
+![Fig. 6](figures/x1_summary.png =x260 "X1 Summary")
 
 It looks like these variables are only correlated with environmental microbiomes, and not seagrass-associated ones. We'll keep that in mind as we continue to explore the data.
 
