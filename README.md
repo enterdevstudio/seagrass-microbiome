@@ -99,7 +99,7 @@ ggplot(data = tsne.mat.na, aes(x = X1, y = X2, fill = as.factor(sample.type))) +
 
 #### Figure 1
 
-![Fig. 1](./figures/tSNE.PDF "tSNE")
+![Fig. 1](./figures/tSNE.pdf "tSNE")
 
 In the Fig. 1, points represent bacterial communities, colored by sample type. Points that are closer together in t-SNE space have more similar bacterial communities. The ellipses represent 95% confidence intervals. The first thing I notice is that there is pretty clear differentiation among bacterial communities found on different parts of the plant and environment. Roughly, the *x*-axis appears to differentiate above- and belowground communities (Fig. 2), while the *y*-axis appears to seperate plant-associated communities from environmental ones (Fig. 3). Moreover, it is clear that roots and sediment seperate more than leaves and water. It would be great to know more about why this is.
 
@@ -195,7 +195,7 @@ ad.mod
 
 ```
 
-![Fig. 4](figures/permanova_table.png =x400 "PERMANOVA")
+![Fig. 4](figures/permanova_table.PNG =x400 "PERMANOVA")
 
 ### Interpretation
 A lot of covariates are significantly correlated with community composition; essentially all of them except *mean macroalgae* are correlated with community composition in all bacterial samples. Most of the variation is explained by *site* and the *sample type x site* interaction, indicating strong among-site variation in microbiome composition. While highly significant, the other covariates explain less than 24% of the residual variation all together. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
