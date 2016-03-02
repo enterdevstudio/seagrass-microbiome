@@ -105,9 +105,11 @@ In the Fig. 1, points represent bacterial communities, colored by sample type. P
 
 
 #### Figure 2
+
 ![Fig. 2](figures/above_tSNE.pdf "tSNE")
 
 #### Figure 3
+
 ![Fig. 3](figures/host_tSNE.pdf "tSNE")
 
 ### 1a. Permutational MANOVA
