@@ -99,7 +99,7 @@ ggplot(data = tsne.mat.na, aes(x = X1, y = X2, fill = as.factor(sample.type))) +
 
 #### Figure 1
 
-![Fig. 1](./figures/tSNE.pdf "tSNE")
+![Fig. 1](./figures/tSNE.jpg =x400 "tSNE")
 
 In the Fig. 1, points represent bacterial communities, colored by sample type. Points that are closer together in t-SNE space have more similar bacterial communities. The ellipses represent 95% confidence intervals. The first thing I notice is that there is pretty clear differentiation among bacterial communities found on different parts of the plant and environment. Roughly, the *x*-axis appears to differentiate above- and belowground communities (Fig. 2), while the *y*-axis appears to seperate plant-associated communities from environmental ones (Fig. 3). Moreover, it is clear that roots and sediment seperate more than leaves and water. It would be great to know more about why this is.
 
