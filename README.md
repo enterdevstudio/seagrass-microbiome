@@ -106,11 +106,11 @@ In the Fig. 1, points represent bacterial communities, colored by sample type. P
 
 #### Figure 2
 
-![Fig. 2](figures/above_tSNE.pdf "tSNE")
+![Fig. 2](figures/above_tSNE.jpg "tSNE")
 
 #### Figure 3
 
-![Fig. 3](figures/host_tSNE.pdf "tSNE")
+![Fig. 3](figures/host_tSNE.jpg "tSNE")
 
 ### 1a. Permutational MANOVA
 Something we might want to know right away is whether any of our (a)biotic variables correlate with axes scores from our community ordination. There are a couple of ways to do this. The first is with a PERMANOVA test. Although I think there are some limitations associated with this sort of analyses, it could be worth doing and will at least give us some intuition about the data. I'll rely on the *adonis* function in the *vegan* package for PERMANOVAs. First we need to merge our metadata with our OTU table. To pare down the number of possible covariates in our analyses, I performed a quick PCA on the metadata, and selected variables that loaded on the first 3 components.
@@ -195,7 +195,7 @@ ad.mod
 
 ```
 
-![Fig. 4](figures/permanova_table.PNG =x400 "PERMANOVA")
+![Fig. 4](figures/permanova_table.jpg "PERMANOVA")
 
 ### Interpretation
 A lot of covariates are significantly correlated with community composition; essentially all of them except *mean macroalgae* are correlated with community composition in all bacterial samples. Most of the variation is explained by *site* and the *sample type x site* interaction, indicating strong among-site variation in microbiome composition. While highly significant, the other covariates explain less than 24% of the residual variation all together. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
@@ -231,11 +231,11 @@ summary(best.mod.x1)
 ```
 
 ### Ordination *X*-axis
-![Fig. 5](figures/x1_anova.png =x150 "X1 ANOVA")
+![Fig. 5](figures/x1_anova.jpg "X1 ANOVA")
 
 Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean shoot density*. There are also *sample type* by *longest leaf*, *mean shoot density* and *mesograzer biomass* interactions, indicating that these were correlated with different *sample types* in different ways. Let's explore the model results a bit closer.
 
-![Fig. 6](figures/x1_summary.png =x260 "X1 Summary")
+![Fig. 6](figures/x1_summary.jpg "X1 Summary")
 
 It looks like these variables are only correlated with environmental microbiomes, and not seagrass-associated ones. We'll keep that in mind as we continue to explore the data.
 
