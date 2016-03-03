@@ -1,6 +1,6 @@
 # The ZEN microbiome
 #### Ashkaan K Fahimipour
-February 29, 2016
+March 2, 2016
 
 ## Importing, sorting and cleaning the data
 
@@ -9,6 +9,7 @@ First, let's load a bunch of libraries and functions I've written over the last 
 ```
 setwd('/Users/Ashkaan/Dropbox/')
 source('./General Functions/microbiome_functions.R')
+set.seed(12345)
 ```
 Let's import all of our data. These data are in the BIOM format, generated from merged libraries using macQIIME 1.9. OTUs were picked against the most recent *greengenes* database at a cutoff similarity of 97%. I rarefied samples to a depth of 100, and normalized OTU read counts by taxon copy number using the PICRUST software. Rarefying to this depth isn't ideal, but yields a decent sample of the data.  I find that the results presented below do not depend on the choice of rarefaction depth up to 500 or whether read counts were corrected for copy number. Since, R has a tough time with HDF5 formatted files, I converted the BIOM table into JSON using *biom convert* in macQIIME prior to these analyses. Contact me for bash scripts that take care of BIOM conversions.
 
@@ -16,9 +17,6 @@ Let's import all of our data. These data are in the BIOM format, generated from 
 ## import data
 biom <- read_biom('./SMP/data/ZEN_1/97_percent/rarefied_100/otu_table_json_even100_norm_by_copy.biom')
 dat <- as.data.frame(as(biom_data(biom), "matrix"), header = TRUE)
-
-## remove OTUs with zero abundance
-dat <- dat[-which(rowSums(dat.rel) == 0), ]
 
 ## import metadata
 tax <- as.matrix(observation_metadata(biom), sep = ',')
@@ -68,7 +66,7 @@ dist.metric <- vegdist(t(dat.rel.trans), method = 'bray')
 t.sne <- tsne(dist.metric, k = 2, perplexity = 70, initial_dims = NA, max_iter = 1000, whiten = 0)
 dist.metric <- as.matrix(dist.metric)
 
-## make distance matrix
+## make a data frame to store our ordination results
 tsne.mat = data.frame(t.sne)
 rownames(tsne.mat) <- rownames(dist.metric)
 
@@ -101,7 +99,7 @@ ggplot(data = tsne.mat.na, aes(x = X1, y = X2, fill = as.factor(sample.type))) +
 
 ![Fig. 1](figures/tSNE.jpg "tSNE")
 
-In the Fig. 1, points represent bacterial communities, colored by sample type. Points that are closer together in t-SNE space have more similar bacterial communities. The ellipses represent 95% confidence intervals. The first thing I notice is that there is pretty clear differentiation among bacterial communities found on different parts of the plant and environment. Roughly, the *x*-axis appears to differentiate above- and belowground communities (Fig. 2), while the *y*-axis appears to seperate plant-associated communities from environmental ones (Fig. 3). Moreover, it is clear that roots and sediment seperate more than leaves and water. It would be great to know more about why this is.
+The points in Fig. 1 represent bacterial communities, colored by sample type. Points that are closer together in t-SNE space have more similar bacterial communities, or lower beta-diversity. The ellipses represent 95% confidence intervals. The first thing I notice is that there is pretty clear differentiation among bacterial communities found on different parts of the plant and environment. Roughly, the *x*-axis differentiates above- and belowground microbiomes (Fig. 2), while the *y*-axis seperates plant-associated communities from environmental ones (Fig. 3). Moreover, root and sediment microbiomes appear to be seperate more than leaves and whole water. Assuming that water and sediment are major sources of colonists for leaves and roots respectively, it would be interesting to know more about this. More on that later.
 
 
 #### Figure 2
@@ -113,7 +111,7 @@ In the Fig. 1, points represent bacterial communities, colored by sample type. P
 ![Fig. 3](figures/host_tSNE.jpg "tSNE")
 
 ### 1a. Permutational MANOVA
-Something we might want to know right away is whether any of our (a)biotic variables correlate with axes scores from our community ordination. There are a couple of ways to do this. The first is with a PERMANOVA test. Although I think there are some limitations associated with this sort of analyses, it could be worth doing and will at least give us some intuition about the data. I'll rely on the *adonis* function in the *vegan* package for PERMANOVAs. First we need to merge our metadata with our OTU table. To pare down the number of possible covariates in our analyses, I performed a quick PCA on the metadata, and selected variables that loaded on the first 3 components.
+Something we might want to know right away is whether any of the (a)biotic variables measured by the ZEN team correlate with axes scores from our community ordination. There are a couple of ways to do this. One is with a PERMANOVA test. Although I think there are some limitations associated with this type of analysis, it could give us some intuition about the data. I'll rely on the *adonis* function in the *vegan* package for PERMANOVAs. First we need to merge our metadata with our OTU table. To pare down the number of possible covariates in our analysis, I performed a quick PCA on the metadata, and selected variables that loaded on the first 3 components.
 
 ```
 pca.all <- princomp(tsne.mat.na[, c(10:14, 16:45)])
