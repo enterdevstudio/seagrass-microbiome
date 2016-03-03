@@ -265,5 +265,44 @@ Taking a closer look...
 
 ![Fig. 8](figures/x2_summary.jpg "X2 summary")
 
+The overall result is that lots of our (a)biotic data are correlated with microbiome community composition. Namely, features of *Z. marina* leaf morphology, biomass and the animal community are to be significantly correlated with microbiome composition, perhaps suggesting that common drivers influence the microbial, macroscopic plant and animal communities.
 
+## 2. Are there host- or environment-associated taxa?
+So far we've determined that microbiomes from different sample types exhibit different community compositions. I would like to know if this is a potential result of strong shifts in who-is-there, e.g., if there are particular taxa associated with different habitats. I would also like to know why all communities overlap a bit in composition, and whether there are cosmopolitan bacteria that are present everywhere. Since routine *ANOVA* is fairly robust to heteroskedacticity, it is a good candidate for identifying taxa that are significantly enriched in particular habitats. First, I'll logit-transform OTU abundances, and perform an *ANOVA* test to determine which OTUs have significantly higher abundances on the host versus the environment.
 
+```
+## enriched taxa
+logitTransform <- function(p) { log(p/(1-p)) }
+enrich.dat <- adonis.dat
+
+## drop OTUs appearing in < 10 sites for being underpowered
+if(length(which(colSums(enrich.dat != 0) < 10)) > 0){
+  enrich.dat <- enrich.dat[, -c(which(colSums(enrich.dat != 0) < 10))] ## removes sites with less than k reads
+}
+
+enrich.frame <- data.frame('otu' = names(enrich.dat[, -c((ncol(enrich.dat) - 14):ncol(enrich.dat))]), 'coef' = rep(NA), 'p' = rep(NA), 'effect' = rep(NA))
+for(u in 1:(ncol(enrich.dat) - 14)){
+  tryCatch({
+    enrich.dat$aov.otu <- logitTransform(0.5 + enrich.dat[, u])
+    enrich.frame$otu[u] <- names(enrich.dat)[u]
+    temp.mod <- lm(aov.otu ~ as.factor(host.env), data = enrich.dat)
+    sig <- which(summary(temp.mod)$coefficients[, 4] <= 0.05)
+    enrich.frame$p[u] <- summary(temp.mod)$coefficients[2, 4]
+    enrich.frame$coef[u] <- summary(temp.mod)$coefficients[2, 1]
+    enrich.frame$effect[u] <- names(summary(temp.mod)$coefficients[, 4])[2]
+  }, error = function(e){})
+  if(u == 1){bar.vec <- c(na.omit(seq(1:(ncol(enrich.dat)))[1:(ncol(enrich.dat)) * round((ncol(enrich.dat)) / 10)]))
+             cat('|')}
+  if(u %in% bar.vec == TRUE){cat('=====|')}
+}
+```
+
+Then, I'll adjust the p-values for multiple comparisons using the Benajmini-Hochberg procedure, and filter the table to include only taxa that are significantly enriched or depressed on the host.
+
+```
+enrich.frame <- na.omit(enrich.frame)
+enrich.frame$p.adjust <- p.adjust(enrich.frame$p, method = 'fdr')
+enrich.frame <- subset(enrich.frame, p.adjust <= 0.01)
+```
+
+There are about 130 OTUs (out of more than 4000) that are either significantly enriched on the host or in the environment. Tables describing host-associated OTUs can be found [here](./output/host_associated_otus.txt), while environmental OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interperet results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur reduction.
