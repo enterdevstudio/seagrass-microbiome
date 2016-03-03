@@ -206,15 +206,15 @@ library(nlme)
 
 ## 1st axis
 mod.x1 <- lme(X1 ~ 
-                as.factor(sample.type) * lat +
+                as.factor(sample.type) * genotype.richness +
                 as.factor(sample.type) * longest.leaf.cm +
                 as.factor(sample.type) * zmarina.above.biomass +
                 as.factor(sample.type) * zmarina.below.biomass +
                 as.factor(sample.type) * mean.zmarina.shoots.m2 +
                 as.factor(sample.type) * mean.mesograzer.b +
-                as.factor(sample.type) * std.crustacean.b,
+                as.factor(sample.type) * std.crustacean.b +
+                as.factor(sample.type) * mean.macroalgae,
               random = ~1|site, data = tsne.mat.na, na.action = 'na.fail', method = 'ML')
-
 ```
 
 This is our *global model* from which I will perform model selection. To do this, I'll compute *AIC* scores for every possible combination of covariates and interactions and select the model with the lowest *AIC* score. I'll automate this process with the *dredge* function in the *MuMIn* library. The best fit model is reported below.
@@ -242,20 +242,28 @@ I'll repeat the same thing for the 2nd t-SNE axis.
 
 ```
 ## 2nd axis
-mod.x2 <- lme(X2 ~
-                as.factor(sample.type) * lat +
+mod.x1 <- lme(X2 ~ 
+                as.factor(sample.type) * genotype.richness +
                 as.factor(sample.type) * longest.leaf.cm +
                 as.factor(sample.type) * zmarina.above.biomass +
                 as.factor(sample.type) * zmarina.below.biomass +
                 as.factor(sample.type) * mean.zmarina.shoots.m2 +
                 as.factor(sample.type) * mean.mesograzer.b +
-                as.factor(sample.type) * std.crustacean.b,
+                as.factor(sample.type) * std.crustacean.b +
+                as.factor(sample.type) * mean.macroalgae,
               random = ~1|site, data = tsne.mat.na, na.action = 'na.fail', method = 'ML')
-
+              
 ## model selection
 dredge.x2 <- dredge(mod.x2, trace = 2)
 best.mod.x2 <- get.models(dredge.x2, 1)[[1]]
 anova(best.mod.x2)
 summary(best.mod.x2)
 ```
+![Fig. 7](figures/x2_anova.jpg "X2 anova")
+
+Taking a closer look...
+
+![Fig. 8](figures/x2_summary.jpg "X2 summary")
+
+
 
