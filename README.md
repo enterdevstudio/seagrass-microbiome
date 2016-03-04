@@ -173,21 +173,19 @@ adonis.dat <- na.omit(adonis.dat)
 
 ```
 
-Now that our data are in the right format, let's actually perform the PERMANOVA. I'm going to limit interactions in our model to *sample type* by *variable* interactions, since that is of primary interest right now; i.e., we want to know how community composition depends on different covariates, and how these relationships depend on *sample type*. We're going to constrain permutations to within sites by passing the *site* variable to the *strata* argument.
+Now that our data are in the right format, let's actually perform the PERMANOVA. I'm going to limit interactions in our model to *sample type* by *variable* interactions, since that is of primary interest right now; i.e., we want to know how community composition depends on some linear combination of covariates, and how these relationships change with *sample type*. We're going to constrain permutations to within sites by passing the *site* variable to the *strata* argument.
 
 
 ```
 ad.mod <- adonis(adonis.dat[, -c(as.numeric(ncol(adonis.dat) - 11):as.numeric(ncol(adonis.dat)))] ~ 
-                   adonis.dat$sample.type * adonis.dat$lat +
-                   adonis.dat$sample.type * adonis.dat$lon +
-                   adonis.dat$sample.type * adonis.dat$site +
-                   adonis.dat$sample.type * adonis.dat$longest.leaf.cm +
-                   adonis.dat$sample.type * adonis.dat$zmarina.above.biomass +
-                   adonis.dat$sample.type * adonis.dat$zmarina.below.biomass +
-                   adonis.dat$sample.type * adonis.dat$mean.zmarina.shoots.m2 +
-                   adonis.dat$sample.type * adonis.dat$mean.mesograzer.b +
-                   adonis.dat$sample.type * adonis.dat$std.crustacean.b +
-                   adonis.dat$sample.type * adonis.dat$mean.macroalgae, 
+                   adonis.dat$sample.type * adonis.dat$genotype.richness +
+                     adonis.dat$sample.type * adonis.dat$longest.leaf.cm +
+                     adonis.dat$sample.type * adonis.dat$zmarina.above.biomass +
+                     adonis.dat$sample.type * adonis.dat$zmarina.below.biomass +
+                     adonis.dat$sample.type * adonis.dat$mean.zmarina.shoots.m2 +
+                     adonis.dat$sample.type * adonis.dat$mean.mesograzer.b +
+                     adonis.dat$sample.type * adonis.dat$std.crustacean.b +
+                     adonis.dat$sample.type * adonis.dat$mean.macroalgae, 
                  method = 'bray', strata = adonis.dat$site, nperm = 999)
 ad.mod
 
@@ -196,7 +194,7 @@ ad.mod
 ![Fig. 4](figures/permanova_table.jpg "PERMANOVA")
 
 ### Interpretation
-A lot of covariates are significantly correlated with community composition; essentially all of them except *mean macroalgae* are correlated with community composition in all bacterial samples. Most of the variation is explained by *site* and the *sample type x site* interaction, indicating strong among-site variation in microbiome composition. While highly significant, the other covariates explain less than 24% of the residual variation all together. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
+A lot of covariates are significantly correlated with community composition; essentially all of them except *mean macroalgae* are correlated with community composition in all bacterial samples. A plurality of the variation is explained by *sample type* (~10%). While highly significant, the other covariates explain less than 30% of the variation in the data. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
  
 ### 1b. Linear models vs. axes scores
 Another way to explore the relationships between covariates and community compositions are to regress our covariates directly onto our axes scores from the t-SNE. Since there is a reasonable expectation that communities within the same site are non-independent, I will fit a Maximum Likelihood random intercept model using the *nlme* package.
@@ -235,7 +233,7 @@ Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean sh
 
 ![Fig. 6](figures/x1_summary.jpg "X1 Summary")
 
-It looks like these variables are only correlated with environmental microbiomes, and not seagrass-associated ones. We'll keep that in mind as we continue to explore the data.
+It looks like these variables are mostly correlated with environmental microbiomes, and not seagrass-associated ones. Genotype richness is related to water and root microbiome compositions differently compared to leaves. *Z. marina* shoot density was related to Water microbiomes, only. Finally, *Z. marina* above ground biomass is significantly correlated with underground and leaf microbiomes in opposite directions, and exhbits no relationship with water microbiomes. We'll keep all of this in mind as we continue to explore the data.
 
 ### Ordination *Y*-axis
 I'll repeat the same thing for the 2nd t-SNE axis.
