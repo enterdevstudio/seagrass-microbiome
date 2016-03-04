@@ -233,7 +233,7 @@ Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean sh
 
 ![Fig. 6](figures/x1_summary.jpg "X1 Summary")
 
-It looks like these variables are mostly correlated with environmental microbiomes, and not seagrass-associated ones. Genotype richness is related to water and root microbiome compositions differently than it is to leaves. *Z. marina* shoot density was related to Water microbiomes, only. Finally, *Z. marina* above ground biomass is significantly correlated with underground and leaf microbiomes in opposite directions, and exhbits no relationship with water microbiomes. We'll keep all of this in mind as we continue to explore the data.
+It looks like these variables are mostly correlated with environmental microbiomes, and not seagrass-associated ones. Genotype richness is related to water and root microbiome compositions differently than it is to leaves. *Z. marina* shoot density was related to Water microbiomes, only. Finally, *Z. marina* above ground biomass is significantly correlated with underground and leaf microbiomes in opposite directions, and exhibits no relationship with water microbiomes. We'll keep all of this in mind as we continue to explore the data.
 
 ### Ordination *Y*-axis
 I'll repeat the same thing for the 2nd t-SNE axis.
@@ -263,10 +263,10 @@ Taking a closer look...
 
 ![Fig. 8](figures/x2_summary.jpg "X2 summary")
 
-The overall result is that lots of our (a)biotic data are correlated with microbiome community composition. Namely, features of *Z. marina* leaf morphology, biomass and the animal community are to be significantly correlated with microbiome composition, perhaps suggesting that common drivers influence the microbial, macroscopic plant and animal communities.
+The overall result is that lots of our (a)biotic data are correlated with microbiome community composition. Namely, features of *Z. marina* leaf morphology, biomass and the animal community are significantly correlated with microbiome composition, perhaps suggesting that common drivers influence the microbial, macroscopic plant and animal communities in similar ways. 
 
 ## 2. Are there host- or environment-associated taxa?
-So far we've determined that microbiomes from different sample types exhibit different community compositions. I would like to know if this is a potential result of strong shifts in who-is-there, e.g., if there are particular taxa associated with different habitats. I would also like to know why all communities overlap a bit in composition, and whether there are cosmopolitan bacteria that are present everywhere. Since routine *ANOVA* is fairly robust to heteroskedacticity, it is a good candidate for identifying taxa that are significantly enriched in particular habitats. First, I'll logit-transform OTU abundances, and perform an *ANOVA* test to determine which OTUs have significantly higher abundances on the host versus the environment.
+So far we've determined that microbiomes from different sample types exhibit different community compositions. I would like to know if this is a potential result of strong shifts in who-is-there, e.g., if there are particular taxa associated with different habitats. I would also like to know why all communities overlap a bit in composition, and whether there are cosmopolitan bacteria that are present everywhere. Since routine *ANOVA* is fairly robust to heteroskedacticity, it is a good candidate for identifying taxa that are significantly enriched in particular habitats. First, I'll logit(0.5 + *x*) transform OTU abundances, and perform *ANOVA* tests to determine which OTUs have significantly higher abundances on the host versus the environment.
 
 ```
 ## enriched taxa
@@ -295,7 +295,7 @@ for(u in 1:(ncol(enrich.dat) - 14)){
 }
 ```
 
-Then, I'll adjust the p-values for multiple comparisons using the Benajmini-Hochberg procedure, and filter the table to include only taxa that are significantly enriched or depressed on the host.
+Then, I'll adjust the p-values for multiple comparisons using the Benjamini-Hochberg procedure, and filter the table to include only taxa that are significantly enriched or depressed on the host.
 
 ```
 enrich.frame <- na.omit(enrich.frame)
@@ -303,4 +303,94 @@ enrich.frame$p.adjust <- p.adjust(enrich.frame$p, method = 'fdr')
 enrich.frame <- subset(enrich.frame, p.adjust <= 0.01)
 ```
 
-There are about 130 OTUs (out of more than 4000) that are either significantly enriched on the host or in the environment. Tables describing host-associated OTUs can be found [here](./output/host_associated_otus.txt), while environmental OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interperet results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur reduction. The 59 host-associated OTUs are represented by 23 unique taxonomic orders, suggesting a fairly diverse potential core seagrass microbiome. The 71 taxa that are significantly depressed on seagrass hosts comprise 21 unique orders. The remaining ~4000 OTUs detected by our methods are likely transient colonists or marine habitat generalists that can tolerate conditions on both the host and the environment.
+There are about 130 OTUs (out of more than 4000) that are either significantly enriched on the host or in the environment. Tables describing host-associated OTUs can be found [here](./output/host_associated_otus.txt), while environmental OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur reduction. The 59 host-associated OTUs are represented by 23 unique taxonomic orders, suggesting a fairly diverse potential core seagrass microbiome. The 71 taxa that are significantly depressed on seagrass hosts comprise 21 unique orders. The remaining ~4000 OTUs detected by our methods are likely transient colonists or marine habitat generalists that can tolerate conditions on both the host and in the environment.
+
+## 2a. Visualizing host- and environment-associated microbes with association networks
+Let's visualize the microbiomes of leaves, roots, sediment and water using association networks. Here, the network nodes represent OTUs, and the edges are defined as significant correlations between taxa abundances. Because we are dealing with compositional data, I will compute correlations using the renormalization and bootstrapping procedure described by [Faust et al. (2012)](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002606). I'll be coloring the nodes according to their classifications (either host- or environment-associated) ascribed in the previous section. The size of the node will be proportional to its degree. And, the edge width will be proportional to the strength of correlation.
+
+First, let's subset our original BIOM table for taxa that are present in at least 10 samples. This is to avoid underpowered correlations among rare taxa.
+
+```
+## Use samples with good metadata
+use <- rownames(tsne.mat.na)
+sub.dat <- dat[, which(names(dat) %in% use)]
+sub.dat <- sub.dat[-which(rowSums(sub.dat != 0) < 10), ] ## removes OTUs that occur in less than 10 of sites
+
+## Add relative abundances to new biom table
+sub.dat.rel <- t(t(sub.dat)/rowSums(t(sub.dat)))
+t.sub <- t(sub.dat) ## keep transposed matrix for covariance matrix estimation
+```
+
+Now let's ReBoot it!
+
+```
+## ReBoot procedure for Spearman correlation networs
+out.spear <- ccrepe(x = t(sub.dat.rel), iterations = 1000, sim.score = cor, sim.score.args = list(method = 'spearman'), min.subj = 2, verbose = TRUE)
+spear.q <- out.spear$q.values
+spear.c <- out.spear$sim.score
+diag(spear.q) <- 0
+diag(spear.c) <- 0
+```
+
+And subset our correlation matrix for those with q-values < 0.01.
+
+```
+## Remove non-significant correlations and significant correlations
+merged.dat <- spear.c
+merged.dat[which(spear.q > 1e-2)] <- 0 ## significant correlations
+diag(merged.dat) <- 0
+
+```
+I'll be using the *igraph* package for network visualizations. First step is to convert our weighted adjacency matrix into an undirected *igraph* object.
+
+```
+## Create igraph object from inferred network
+merged <- graph.adjacency(merged.dat, weighted = TRUE, mode = "undirected")
+
+```
+Now I'll make the network pretty. This involves changing edge widths, node sizes, etc. and coloring the nodes based on categories we assigned in the previous section.
+
+```
+## edge curve and color
+curves <- autocurve.edges2(merged)
+E(merged)$color <- rep('#31a354', length(E(merged)))
+E(merged)$color[which(E(merged)$weight < 0)] <- '#de2d26'
+E(merged)$weight <- 7.5 * E(merged)$weight
+
+## node size
+V(merged)$size <- degree(merged)^(1/2)
+
+## layout
+merged$layout <- layout.fruchterman.reingold(merged)
+```
+I'm going to color host-associated nodes orange, environmental nodes blue and everything else gray.
+
+```
+## add host/env labels
+V(merged)$color <- rep('gray50')
+V(merged)$color[which(names(V(merged)) %in% host.frame$otu)] <- '#d95f0e' ## orange
+V(merged)$color[which(names(V(merged)) %in% env.frame$otu)] <- '#3182bd' ## blue
+```
+
+If you want to know the modularity of the network...
+
+```
+## (1) Clauset-Newman-Moore algorithm
+clust <- fastgreedy.community(merged, weights = abs(E(merged)$weight))
+modularity(merged, clust$membership, weights = abs(E(merged)$weight))
+```
+
+Let's visualize our speculative meta-network:
+
+```
+## meta-network plot
+plot.igraph(merged, vertex.label = NA, edge.width = .6*(abs(E(merged)$weight)), edge.curved = curves)
+```
+![Fig. 9](figures/metanetwork.jpg "Speculative metanetwork")
+
+
+
+
+
+
+
