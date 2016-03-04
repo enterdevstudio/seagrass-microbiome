@@ -233,7 +233,7 @@ Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean sh
 
 ![Fig. 6](figures/x1_summary.jpg "X1 Summary")
 
-It looks like these variables are mostly correlated with environmental microbiomes, and not seagrass-associated ones. Genotype richness is related to water and root microbiome compositions differently compared to leaves. *Z. marina* shoot density was related to Water microbiomes, only. Finally, *Z. marina* above ground biomass is significantly correlated with underground and leaf microbiomes in opposite directions, and exhbits no relationship with water microbiomes. We'll keep all of this in mind as we continue to explore the data.
+It looks like these variables are mostly correlated with environmental microbiomes, and not seagrass-associated ones. Genotype richness is related to water and root microbiome compositions differently than it is to leaves. *Z. marina* shoot density was related to Water microbiomes, only. Finally, *Z. marina* above ground biomass is significantly correlated with underground and leaf microbiomes in opposite directions, and exhbits no relationship with water microbiomes. We'll keep all of this in mind as we continue to explore the data.
 
 ### Ordination *Y*-axis
 I'll repeat the same thing for the 2nd t-SNE axis.
