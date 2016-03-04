@@ -339,14 +339,12 @@ And subset our correlation matrix for those with q-values < 0.01.
 merged.dat <- spear.c
 merged.dat[which(spear.q > 1e-2)] <- 0 ## significant correlations
 diag(merged.dat) <- 0
-
 ```
 I'll be using the *igraph* package for network visualizations. First step is to convert our weighted adjacency matrix into an undirected *igraph* object.
 
 ```
 ## Create igraph object from inferred network
 merged <- graph.adjacency(merged.dat, weighted = TRUE, mode = "undirected")
-
 ```
 Now I'll make the network pretty. This involves changing edge widths, node sizes, etc. and coloring the nodes based on categories we assigned in the previous section.
 
@@ -388,9 +386,80 @@ plot.igraph(merged, vertex.label = NA, edge.width = .6*(abs(E(merged)$weight)), 
 ```
 ![Fig. 9](figures/metanetwork.jpg "Speculative metanetwork")
 
+The structure of our meta-microbiome is really interesting! It appears to be highly modular, with subsets of OTUs being associated with many OTUs within their sub-communities and few OTUs in other sub-communities (modularity = 0.72 using the Newman-Clauset-Moore algorithm). Moreover, there appears to be a single host-associated community (orange cluster) and two distinct environmental communities (blue clusters). Their also appears to be a single community of ubiquitous taxa that we could not ascribe to either host or environment (gray cluster). The really neat thing is the presence of all of those negative (red) edges between communities, suggesting strong co-exclusion patterns between subsets of these OTUs associated with different habitats.
 
+Let's now get a picture of the differences (and similarities) between our 4 tissue types by visualizing the site-specific association networks for each of these sample types. I'll do this by simply aggregating taxa that are present in these sample types and plotting all the edges between them. Starting with leaves...
 
+```
+## subset network by tissue type
+type.i.want <- 'Leaf'
+type.dat <- meta.to.type(merged.dat, type = type.i.want)
 
+## remove zero-degree nodes
+type.dat <- type.dat[, -which(colSums(type.dat) == 0)]
+type.dat <- type.dat[-which(rowSums(type.dat) == 0), ]
 
+## make igraph object
+type.graph <- graph.adjacency(type.dat, weighted = TRUE, mode = 'undirected') ## let's try undirected for now
 
+## add host/env labels
+V(type.graph)$color <- rep('gray50')
+V(type.graph)$color[which(names(V(type.graph)) %in% host.frame$otu)] <- '#d95f0e' ## orange
+V(type.graph)$color[which(names(V(type.graph)) %in% env.frame$otu)] <- '#3182bd' ## blue
+
+## add to metadata
+curves <- autocurve.edges2(type.graph)
+E(type.graph)$color <- rep('#31a354', length(E(type.graph)))
+E(type.graph)$color[which(E(type.graph)$weight < 0)] <- '#de2d26'
+E(type.graph)$weight <- 7.5 * E(type.graph)$weight
+
+## size
+# V(type.graph)$size <- degree(type.graph)^(1/2)
+V(type.graph)$label.cex <- .5
+```
+
+In this graph, I want to scale the size of my nodes with their average abundance across all samples.
+
+```
+## i want to size nodes based on their prevalence across samples
+for(y in 1:length(names(V(type.graph)))){
+  curr.node <- names(V(type.graph))[y]
+  curr.dat <- sub.dat.rel[curr.node, ]
+#   V(type.graph)$size[y] <- length(curr.dat[which(curr.dat > 0)]) / 20
+  V(type.graph)$size[y] <- 12 * (mean(curr.dat)^(1/3))
+}
+```
+
+Out of curiosity, what OTU has the highest average abundance?
+
+```
+## taxon with highest average abundance
+tax.2[which(tax.2$otu == names(which(rowMeans(sub.dat.rel) == max(rowMeans(sub.dat.rel))))), ]
+```
+It happens to be a cyanobateria in the order *Nostocales*. This taxon has the highest average relative abundance, by far.
+
+Let's visualize the leaf graph now. This time I'll label nodes by taxonomic order.
+
+```
+## add taxonomy if you want to color or label nodes by taxon
+for(m in 1:length(names(V(type.graph)))){
+  V(type.graph)$phylum[m] <- tax.2$phylum[which(tax.2$otu == names(V(type.graph))[m])]
+  V(type.graph)$order[m] <- tax.2$order[which(tax.2$otu == names(V(type.graph))[m])]
+  V(type.graph)$class[m] <- tax.2$class[which(tax.2$otu == names(V(type.graph))[m])]
+  cat(round(m/length(names(V(type.graph)))*100, 1), '% done matching OTUs to taxa\n')
+}
+
+## layout
+type.graph$layout <- layout.fruchterman.reingold(type.graph)
+
+## (1) Clauset-Newman-Moore algorithm
+clust <- fastgreedy.community(type.graph, weights = abs(E(type.graph)$weight))
+modularity(type.graph, clust$membership, weights = abs(E(type.graph)$weight))
+
+## Site-level network plot
+plot.igraph(type.graph, vertex.label = V(type.graph)$order, edge.curved = curves)
+```
+![Fig. 10](figures/leaf_network.jpg "Speculative metanetwork")
+
+More coming soon...
 
