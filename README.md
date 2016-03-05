@@ -1,6 +1,6 @@
 # The ZEN microbiome
 #### Ashkaan K Fahimipour
-March 2, 2016
+March 4, 2016
 
 ## Importing, sorting and cleaning the data
 
