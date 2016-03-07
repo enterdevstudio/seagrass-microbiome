@@ -314,7 +314,7 @@ First, let's subset our original BIOM table for taxa that are present in at leas
 ## Use samples with good metadata
 use <- rownames(tsne.mat.na)
 sub.dat <- dat[, which(names(dat) %in% use)]
-sub.dat <- sub.dat[-which(rowSums(sub.dat != 0) < 10), ] ## removes OTUs that occur in less than 10 of sites
+sub.dat <- sub.dat[-which(rowSums(sub.dat != 0) < 10), ] ## removes OTUs that occur in less than 10 sites
 
 ## Add relative abundances to new biom table
 sub.dat.rel <- t(t(sub.dat)/rowSums(t(sub.dat)))
@@ -324,7 +324,7 @@ t.sub <- t(sub.dat) ## keep transposed matrix for covariance matrix estimation
 Now let's ReBoot it!
 
 ```
-## ReBoot procedure for Spearman correlation networs
+## ReBoot procedure for Spearman correlation networks
 out.spear <- ccrepe(x = t(sub.dat.rel), iterations = 1000, sim.score = cor, sim.score.args = list(method = 'spearman'), min.subj = 2, verbose = TRUE)
 spear.q <- out.spear$q.values
 spear.c <- out.spear$sim.score
@@ -388,7 +388,7 @@ plot.igraph(merged, vertex.label = NA, edge.width = .6*(abs(E(merged)$weight)), 
 
 The structure of our meta-microbiome is really interesting! It appears to be highly modular, with subsets of OTUs being associated with many OTUs within their sub-communities and few OTUs in other sub-communities (modularity = 0.72 using the Newman-Clauset-Moore algorithm). Moreover, there appears to be a single host-associated community (orange cluster) and two distinct environmental communities (blue clusters). Their also appears to be a single community of ubiquitous taxa that we could not ascribe to either host or environment (gray cluster). The really neat thing is the presence of all of those negative (red) edges between communities, suggesting strong co-exclusion patterns between subsets of these OTUs associated with different habitats.
 
-Let's now get a picture of the differences (and similarities) between our 4 tissue types by visualizing the site-specific association networks for each of these sample types. I'll do this by simply aggregating taxa that are present in these sample types and plotting all the edges between them. Starting with leaves...
+Let's now get a picture of the differences (and similarities) between our 4 tissue types by visualizing the type-specific association networks for each of these sample types. I'll do this by simply aggregating taxa that are present in each sample type and plotting all the edges between them. Starting with leaves...
 
 ```
 ## subset network by tissue type
