@@ -1,6 +1,6 @@
 # The ZEN microbiome
 #### Ashkaan K Fahimipour
-March 4, 2016
+March 7, 2016
 
 ## Importing, sorting and cleaning the data
 
@@ -229,11 +229,11 @@ summary(best.mod.x1)
 ### Ordination *X*-axis
 ![Fig. 5](figures/x1_anova.jpg "X1 ANOVA")
 
-Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean shoot density*. There are also *sample type* by *longest leaf*, *mean shoot density* and *mesograzer biomass* interactions, indicating that these were correlated with different *sample types* in different ways. Let's explore the model results a bit closer.
+Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean macroalgae biomass*. There are also significant *sample type* by *above-ground biomass* and *mean shoot density* interactions, indicating that these were correlated with communities from different *sample types* in different ways. Let's explore the model results a bit closer.
 
 ![Fig. 6](figures/x1_summary.jpg "X1 Summary")
 
-It looks like these variables are mostly correlated with environmental microbiomes, and not seagrass-associated ones. Genotype richness is related to water and root microbiome compositions differently than it is to leaves. *Z. marina* shoot density was related to Water microbiomes, only. Finally, *Z. marina* above ground biomass is significantly correlated with underground and leaf microbiomes in opposite directions, and exhibits no relationship with water microbiomes. We'll keep all of this in mind as we continue to explore the data.
+*Z. marina* shoot density was related to water microbiomes, only. It also looks like *Z. marina* above ground biomass is significantly correlated with underground microbiome composition - both sediment and root samples. We'll keep all of this in mind as we continue to explore the data.
 
 ### Ordination *Y*-axis
 I'll repeat the same thing for the 2nd t-SNE axis.
@@ -266,7 +266,7 @@ Taking a closer look...
 The overall result is that lots of our (a)biotic data are correlated with microbiome community composition. Namely, features of *Z. marina* leaf morphology, biomass and the animal community are significantly correlated with microbiome composition, perhaps suggesting that common drivers influence the microbial, macroscopic plant and animal communities in similar ways. 
 
 ## 2. Are there host- or environment-associated taxa?
-So far we've determined that microbiomes from different sample types exhibit different community compositions. I would like to know if this is a potential result of strong shifts in who-is-there, e.g., if there are particular taxa associated with different habitats. I would also like to know why all communities overlap a bit in composition, and whether there are cosmopolitan bacteria that are present everywhere. Since routine *ANOVA* is fairly robust to heteroskedacticity, it is a good candidate for identifying taxa that are significantly enriched in particular habitats. First, I'll logit(0.5 + *x*) transform OTU abundances, and perform *ANOVA* tests to determine which OTUs have significantly higher abundances on the host versus the environment.
+So far we've determined that microbiomes from different sample types exhibit different community compositions. I would like to know if this is a potential result of strong shifts in who-is-there, e.g., if there are particular taxa associated with different habitats. I would also like to know why all communities overlap a bit in composition, and whether there are cosmopolitan bacteria that are present everywhere. Since routine *ANOVA* is fairly robust to heteroskedacticity, it is a good candidate for identifying taxa that are significantly enriched in particular habitats. First, I'll logit(0.005 + *x*) transform OTU abundances, and perform *ANOVA* tests to determine which OTUs have significantly higher abundances on the host versus the environment.
 
 ```
 ## enriched taxa
@@ -281,7 +281,7 @@ if(length(which(colSums(enrich.dat != 0) < 10)) > 0){
 enrich.frame <- data.frame('otu' = names(enrich.dat[, -c((ncol(enrich.dat) - 14):ncol(enrich.dat))]), 'coef' = rep(NA), 'p' = rep(NA), 'effect' = rep(NA))
 for(u in 1:(ncol(enrich.dat) - 14)){
   tryCatch({
-    enrich.dat$aov.otu <- logitTransform(0.5 + enrich.dat[, u])
+    enrich.dat$aov.otu <- logitTransform(0.005 + enrich.dat[, u])
     enrich.frame$otu[u] <- names(enrich.dat)[u]
     temp.mod <- lm(aov.otu ~ as.factor(host.env), data = enrich.dat)
     sig <- which(summary(temp.mod)$coefficients[, 4] <= 0.05)
@@ -303,7 +303,7 @@ enrich.frame$p.adjust <- p.adjust(enrich.frame$p, method = 'fdr')
 enrich.frame <- subset(enrich.frame, p.adjust <= 0.01)
 ```
 
-There are about 130 OTUs (out of more than 4000) that are either significantly enriched on the host or in the environment. Tables describing host-associated OTUs can be found [here](./output/host_associated_otus.txt), while environmental OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur reduction. The 59 host-associated OTUs are represented by 23 unique taxonomic orders, suggesting a fairly diverse potential core seagrass microbiome. The 71 taxa that are significantly depressed on seagrass hosts comprise 21 unique orders. The remaining ~4000 OTUs detected by our methods are likely transient colonists or marine habitat generalists that can tolerate conditions on both the host and in the environment.
+There are 179 OTUs (out of more than 4100) that are either significantly enriched or depressed on the. Tables describing host-associated OTUs can be found [here](./output/host_associated_otus.txt), while environmental OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur reduction. The 84 host-associated OTUs are represented by 28 unique taxonomic orders and 17 classes, suggesting a fairly diverse potential core seagrass microbiome. The 95 taxa that are significantly depressed on seagrass hosts span 23 unique orders and 18 classes. The remaining ~4000 OTUs detected by our methods are likely transient colonists or marine habitat generalists that can tolerate conditions on both the host and in the environment.
 
 ## 2a. Visualizing host- and environment-associated microbes with association networks
 Let's visualize the microbiomes of leaves, roots, sediment and water using association networks. Here, the network nodes represent OTUs, and the edges are defined as significant correlations between taxa abundances. Because we are dealing with compositional data, I will compute correlations using the renormalization and bootstrapping procedure described by [Faust et al. (2012)](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002606). I'll be coloring the nodes according to their classifications (either host- or environment-associated) ascribed in the previous section. The size of the node will be proportional to its degree. And, the edge width will be proportional to the strength of correlation.
