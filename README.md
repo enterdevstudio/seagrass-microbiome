@@ -194,7 +194,7 @@ ad.mod
 ![Fig. 4](figures/permanova_table.jpg "PERMANOVA")
 
 ### Interpretation
-A lot of covariates are significantly correlated with community composition; essentially all of them except *mean macroalgae* are correlated with community composition in all bacterial samples. A plurality of the variation is explained by *sample type* (~10%). While highly significant, the other covariates explain less than 30% of the variation in the data. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
+A lot of covariates are significantly correlated with community composition; essentially all of them except *crustacean biomass* are correlated with community composition in all bacterial samples. A plurality of the variation is explained by *sample type* (~10%). While highly significant, the other covariates explain less than 30% of the variation in the data. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
  
 ### 1b. Linear models vs. axes scores
 Another way to explore the relationships between covariates and community compositions are to regress our covariates directly onto our axes scores from the t-SNE. Since there is a reasonable expectation that communities within the same site are non-independent, I will fit a Maximum Likelihood random intercept model using the *nlme* package.
@@ -436,9 +436,9 @@ Out of curiosity, what OTU has the highest average abundance?
 ## taxon with highest average abundance
 tax.2[which(tax.2$otu == names(which(rowMeans(sub.dat.rel) == max(rowMeans(sub.dat.rel))))), ]
 ```
-It happens to be a cyanobateria in the order *Nostocales*. This taxon has the highest average relative abundance, by far.
+It happens to be a cyanobateria in the order *Nostocales*. This taxon has the highest average relative abundance, by far. We should do some digging and verify that this isn't a common misclassification for Chloroplasts or something.
 
-Let's visualize the leaf graph now. This time I'll label nodes by taxonomic order.
+Let's visualize the leaf graph now.
 
 ```
 ## add taxonomy if you want to color or label nodes by taxon
