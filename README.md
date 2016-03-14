@@ -303,7 +303,7 @@ enrich.frame$p.adjust <- p.adjust(enrich.frame$p, method = 'fdr')
 enrich.frame <- subset(enrich.frame, p.adjust <= 0.01)
 ```
 
-There are 179 OTUs (out of more than 4100) that are either significantly enriched or depressed on the. Tables describing host-associated OTUs can be found [here](./output/host_associated_otus.txt), while environmental OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur reduction. The 84 host-associated OTUs are represented by 28 unique taxonomic orders and 17 classes, suggesting a fairly diverse potential core seagrass microbiome. The 95 taxa that are significantly depressed on seagrass hosts span 23 unique orders and 18 classes. The remaining ~4000 OTUs detected by our methods are likely transient colonists or marine habitat generalists that can tolerate conditions on both the host and in the environment.
+There are 179 OTUs (out of more than 4100) that are either significantly enriched or depressed on the seagrass host. Tables describing *host-associated* OTUs can be found [here](./output/host_associated_otus.txt), while *environmental* OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur metabolism. The 84 host-associated OTUs are represented by 28 unique taxonomic orders and 17 classes, suggesting a fairly diverse potential core seagrass microbiome. The 95 taxa that are significantly depressed on seagrass hosts span 23 unique orders and 18 classes. The remaining ~4000 OTUs detected by our methods are probably transient colonists or marine habitat generalists that can tolerate conditions on both the host and in the environment.
 
 ## 2a. Visualizing host- and environment-associated microbes with association networks
 Let's visualize the microbiomes of leaves, roots, sediment and water using association networks. Here, the network nodes represent OTUs, and the edges are defined as significant correlations between taxa abundances. Because we are dealing with compositional data, I will compute correlations using the renormalization and bootstrapping procedure described by [Faust et al. (2012)](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002606). I'll be coloring the nodes according to their classifications (either host- or environment-associated) ascribed in the previous section. The size of the node will be proportional to its degree. And, the edge width will be proportional to the strength of correlation.
@@ -459,7 +459,11 @@ modularity(type.graph, clust$membership, weights = abs(E(type.graph)$weight))
 ## Site-level network plot
 plot.igraph(type.graph, vertex.label = V(type.graph)$order, edge.curved = curves)
 ```
-![Fig. 10](figures/leaf_network.jpg "Speculative metanetwork")
+![Fig. 10](figures/leaf_network.jpg "Leaf metanetwork")
 
-More coming soon...
+The root network:
+
+![Fig. 11](figures/roots_network.jpg "Root metanetwork")
+
+Just examining the two graphs visually, it looks like one major difference between root and leaf microbiomes is the absence of that second *environmentally-associated* cluster of strongly co-occurring OTUs in roots.
 
