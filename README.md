@@ -1,21 +1,35 @@
 # The ZEN microbiome
 #### Ashkaan K Fahimipour
-March 7, 2016
+March 27, 2016
 
-## Importing, sorting and cleaning the data
+### 1. Introduction
+The first step in understanding the symbiotic relationship between seagrass microbes and their host is to characterize the baseline microbiota and the differences that are associated with host genotype and environment. In the Moore Foundation proposal, we proposed to address the following set of questions:
 
-First, let's load a bunch of libraries and functions I've written over the last few months that do various microbiome things. These analyses are performed exclusively in R.
+- Is there a ‘core microbiome’ or set of commonly occurring microorganisms that appear in all assemblages associated with seagrasses?
+- Are there significant co-occurrence or co-exclusion relationships between pairs of microbial taxa within the seagrass microbiome?
+- How much is microbial community composition influenced by genetic and ecological variation in the host, and is this different for different host tissues?
 
-```
+
+### 2. Analyses
+These analyses depend heavily on Python scripts bundled with [*macQIIME* v1.9](http://www.wernerlab.org/software/macqiime) and the *biom*, *ggplot2*, *vegan*, *tsne*, *igraph* and *ccrepe* packages in the statistical programming environment *R*.
+
+#### Importing, sorting and cleaning the data
+
+Let's import all of our data. These data are in the *BIOM* format, generated from [these](https://figshare.com/articles/Seagrass_Microbiome/1598220) libraries using *QIIME* 1.9. OTUs were picked against the most recent *GreenGenes* database at a cutoff similarity of 97%. I rarefied samples to a depth of 100, and normalized OTU read counts by taxon copy number using *PICRUSt*. Rarefying to this depth isn't ideal, but yields a fair sample of the data. Since, R has a tough time with HDF5 formatted files, I converted the BIOM table into JSON using [*biom convert*](http://biom-format.org/documentation/biom_conversion.html) prior to these analyses. Bash scripts that generated data are a modified version of James Meadows' scripts found [here](https://github.com/jfmeadow/ReproducibleDemo/blob/master/QIIME/pickTheseOTUs.sh); these are updated to work with *QIIME* 1.9 and tweaked to do some extra bits like filtering out chloroplasts/mitochondria.
+
+I'll load a bunch of libraries and functions I've written in R over the last few months that automate various useful microbiome things and data reshaping.
+
+```ruby
 setwd('/Users/Ashkaan/Dropbox/')
 source('./General Functions/microbiome_functions.R')
-set.seed(12345)
+set.seed(11111)
 ```
-Let's import all of our data. These data are in the BIOM format, generated from merged libraries using macQIIME 1.9. OTUs were picked against the most recent *greengenes* database at a cutoff similarity of 97%. I rarefied samples to a depth of 100, and normalized OTU read counts by taxon copy number using the PICRUST software. Rarefying to this depth isn't ideal, but yields a decent sample of the data.  I find that the results presented below do not depend on the choice of rarefaction depth up to 500 or whether read counts were corrected for copy number. Since, R has a tough time with HDF5 formatted files, I converted the BIOM table into JSON using *biom convert* in macQIIME prior to these analyses. Contact me for bash scripts that take care of BIOM conversions.
 
-```
+Reading in the data...
+
+```ruby
 ## import data
-biom <- read_biom('./SMP/data/ZEN_1/97_percent/rarefied_100/otu_table_json_even100_norm_by_copy.biom')
+biom <- read_biom('./ZEN-microbiome/data/otu_table_filt_rare100_JSON_copynum.biom')
 dat <- as.data.frame(as(biom_data(biom), "matrix"), header = TRUE)
 
 ## import metadata
@@ -28,22 +42,20 @@ biotic <- read.csv('./SMP/data/ZEN_biotic_data_2016_01_20.csv', header = TRUE)
 I want to clean up the OTU table and metadata a little. Most of this is filtering out data that aren't useful to us, and renaming some of the metadata columns.
 
 ```
-## clean up meta file
+## recode subsite from 1-2 to A-B
 meta$SubsiteNumber[which(meta$SubsiteNumber == 1)] <- 'A'
 meta$SubsiteNumber[which(meta$SubsiteNumber == 2)] <- 'B'
 meta$sub.code <- paste(meta$ZenSite, meta$SubsiteNumber, sep = '.')
 
 ## trim taxonomy list to OTUs that are present
 tax.trim <- as.matrix(tax[which(rownames(tax) %in% rownames(dat)), ])
+
+## string split and unlist
 tax.2 <- tax.to.long(tax.trim)
 
 ## exclude epiphyte samples
 dont.use <- meta$SampleID[which(meta$SampleType == 'Epiphyte')]
 dat <- dat[, -which(names(dat) %in% dont.use)]
-
-## filter out chloroplasts
-chloros <- tax.2$otu[which(tax.2$class == 'Chloroplast')]
-dat <- dat[-which(rownames(dat) %in% chloros), ]
 ```
 
 Finally, the last thing I want to do before analysis is to normalize my BIOM table, and to transform the relative abundances for more well-behaved residuals downstream. I find log(1 + x) and root transforms are good for these sorts of data.
@@ -52,13 +64,10 @@ Finally, the last thing I want to do before analysis is to normalize my BIOM tab
 ## add relative abundances to new biom table
 ## computing row-wise is so much faster!
 dat.rel <- t(t(dat)/rowSums(t(dat)))
-
-## transform data to improve residuals
-dat.rel.trans <- log(1 + dat.rel)
 ```
 
 ## 1. Community Ordination
-I want to get an initial sense of bacterial community similarity across our different sample types (Leaf, Root, Sediment and Water). To do this, I'm first going to compute Bray-Curtis *distances* of log(1 + x) transformed relative abundances between community pairs. I'll then project these into 2-dimensions using t-distributed stochastic neighbor embedding, or t-SNE. t-SNE is sometimes thought of as a non-linear analogue of nMDS.
+I want to get an initial sense of bacterial community composition across our different sample types (Leaf, Root, Sediment and Water). To do this, I'm first going to compute Bray-Curtis *distances* of log(1 + x) transformed relative abundances between community pairs. I'll then visualize these in 2-dimensions using t-distributed stochastic neighbor embedding, or t-SNE. t-SNE is sometimes thought of as a non-linear analogue of nMDS. In contrast to, e.g., PCA, t-SNE has a non-convex objective function that's minimized using a gradient descent optimization that is initiated randomly. As a result, it is possible that different runs give you different solutions. The authors suggest running t-SNE a number of times, and to select the visualization with the lowest value of the objective function as your final visualization.
 
 ```
 ## distance matrix of transformed relative abundances
@@ -97,18 +106,18 @@ ggplot(data = tsne.mat.na, aes(x = X1, y = X2, fill = as.factor(sample.type))) +
 
 #### Figure 1
 
-![Fig. 1](figures/tSNE.jpg "tSNE")
+![Fig. 1](figures/ "tSNE")
 
 The points in Fig. 1 represent bacterial communities, colored by sample type. Points that are closer together in t-SNE space have more similar bacterial communities, or lower beta-diversity. The ellipses represent 95% confidence intervals. The first thing I notice is that there is pretty clear differentiation among bacterial communities found on different parts of the plant and environment. Roughly, the *x*-axis differentiates above- and belowground microbiomes (Fig. 2), while the *y*-axis seperates plant-associated communities from environmental ones (Fig. 3). Moreover, root and sediment microbiomes appear to seperate more than leaves and whole water. Assuming that water and sediment are major sources of colonists for leaves and roots respectively, it would be interesting to know more about this. More on that later.
 
 
 #### Figure 2
 
-![Fig. 2](figures/above_tSNE.jpg "tSNE")
+![Fig. 2](figures/ "tSNE")
 
 #### Figure 3
 
-![Fig. 3](figures/host_tSNE.jpg "tSNE")
+![Fig. 3](figures/ "tSNE")
 
 ### 1a. Permutational MANOVA
 Something we might want to know right away is whether any of the (a)biotic variables measured by the ZEN team correlate with axes scores from our community ordination. There are a couple of ways to do this. One is with a PERMANOVA test. Although I think there are some limitations associated with this type of analysis, it could give us some intuition about the data. I'll rely on the *adonis* function in the *vegan* package for PERMANOVAs. First we need to merge our metadata with our OTU table. To pare down the number of possible covariates in our analysis, I performed a quick PCA on the metadata, and selected variables that loaded on the first 3 components.
@@ -191,7 +200,7 @@ ad.mod
 
 ```
 
-![Fig. 4](figures/permanova_table.jpg "PERMANOVA")
+![Fig. 4](figures/ "PERMANOVA")
 
 ### Interpretation
 A lot of covariates are significantly correlated with community composition; essentially all of them except *crustacean biomass* are correlated with community composition in all bacterial samples. A plurality of the variation is explained by *sample type* (~10%). While highly significant, the other covariates explain less than 30% of the variation in the data. We can also see that microbiomes of different *sample types* are correlated to these data in different ways (i.e., *sample type by x* interactions ). But, the PERMANOVA framework doesn't permit any sort of post-hoc analyses to tell us *how* they differ. For this reason, I'll take an alternative approach similar to Kembel et al. (2011) PNAS and look for correlations between these data and axes scores resulting from t-SNE ordination of microbial community compositions.
@@ -227,11 +236,11 @@ summary(best.mod.x1)
 ```
 
 ### Ordination *X*-axis
-![Fig. 5](figures/x1_anova.jpg "X1 ANOVA")
+![Fig. 5](figures/ "X1 ANOVA")
 
 Ordination scores on t-SNE axis 1 are correlated with *sample type* and *mean macroalgae biomass*. There are also significant *sample type* by *above-ground biomass* and *mean shoot density* interactions, indicating that these were correlated with communities from different *sample types* in different ways. Let's explore the model results a bit closer.
 
-![Fig. 6](figures/x1_summary.jpg "X1 Summary")
+![Fig. 6](figures/ "X1 Summary")
 
 *Z. marina* shoot density was related to water microbiomes, only. It also looks like *Z. marina* above ground biomass is significantly correlated with underground microbiome composition - both sediment and root samples. We'll keep all of this in mind as we continue to explore the data.
 
@@ -257,11 +266,11 @@ best.mod.x2 <- get.models(dredge.x2, 1)[[1]]
 anova(best.mod.x2)
 summary(best.mod.x2)
 ```
-![Fig. 7](figures/x2_anova.jpg "X2 anova")
+![Fig. 7](figures/ "X2 anova")
 
 Taking a closer look...
 
-![Fig. 8](figures/x2_summary.jpg "X2 summary")
+![Fig. 8](figures/ "X2 summary")
 
 The overall result is that lots of our (a)biotic data are correlated with microbiome community composition. Namely, features of *Z. marina* leaf morphology, biomass and the animal community are significantly correlated with microbiome composition, perhaps suggesting that common drivers influence the microbial, macroscopic plant and animal communities in similar ways. 
 
@@ -384,7 +393,7 @@ Let's visualize our speculative meta-network:
 ## meta-network plot
 plot.igraph(merged, vertex.label = NA, edge.width = .6*(abs(E(merged)$weight)), edge.curved = curves)
 ```
-![Fig. 9](figures/metanetwork.jpg "Speculative metanetwork")
+![Fig. 9](figures/ "Speculative metanetwork")
 
 The structure of our meta-microbiome is really interesting! It appears to be highly modular, with subsets of OTUs being associated with many OTUs within their sub-communities and few OTUs in other sub-communities (modularity = 0.72 using the Newman-Clauset-Moore algorithm). Moreover, there appears to be a single host-associated community (orange cluster) and two distinct environmental communities (blue clusters). Their also appears to be a single community of ubiquitous taxa that we could not ascribe to either host or environment (gray cluster). The really neat thing is the presence of all of those negative (red) edges between communities, suggesting strong co-exclusion patterns between subsets of these OTUs associated with different habitats.
 
@@ -459,11 +468,11 @@ modularity(type.graph, clust$membership, weights = abs(E(type.graph)$weight))
 ## Site-level network plot
 plot.igraph(type.graph, vertex.label = V(type.graph)$order, edge.curved = curves)
 ```
-![Fig. 10](figures/leaf_network.jpg "Leaf metanetwork")
+![Fig. 10](figures/ "Leaf metanetwork")
 
 The root network:
 
-![Fig. 11](figures/roots_network.jpg "Root metanetwork")
+![Fig. 11](figures/ "Root metanetwork")
 
 Just examining the two graphs visually, it looks like one major difference between root and leaf microbiomes is the absence of that second *environmentally-associated* cluster of strongly co-occurring OTUs in roots.
 
