@@ -131,10 +131,10 @@ Passing the matrix of Unifrac distances through the ordination above yields the 
 #### Figure 2
 ![Fig. 2](figures/Fig_2.jpg "tSNE")
 
-This looks really similar to the results of our Bray-Curtis analysis, which tells us a lot about the drivers of community composition in the seagrass microbiome.  Namely, it suggests that the OTUs which really differ in relative abundance between the four groups are also phylogenetically distinct, and therefore exhibit a low level of shared branch length. If the differences between the four groups were driven primarily by differences in the abundance of close relatives, then we would not expect to see such comparable (to Bray-Curtis) seperation in t-SNE space when the unifrac metric was applied. But we do, so they aren't.
+This looks qualitatively identical to the results of our Bray-Curtis analysis, which tells us a lot about the drivers of community composition in the seagrass microbiome.  Namely, it suggests that the OTUs which really differ in presence and relative abundance between the four groups are also phylogenetically distinct, and therefore exhibit a low level of shared branch length. If the differences between the four groups were driven primarily by differences in the abundance of close relatives, then we would not expect to see such comparable (to Bray-Curtis) seperation in t-SNE space when the unifrac metric was applied. But we do, so they aren't.
 
 #### Summary of section 2a
-I analyzed community composition using two different metrics: Bray-Curtis, which weighs communities based on differences in the relative abundance of OTUs and Unifrac, which weighs communities based on the phylogenetic distance between OTUs that are present in the system. Because they yield nearly identical patterns in beta-diversity, we can conclude that the major differences between communities sampled from different habitats (i.e., leaf, root, water or sediment) were due to differences in the presence and abundance of phylogenetically distinct OTUs. Moreover, these differences were large between soil and root communities but not between water and leaf communities. If we assume that soil and water are the major colonist sources for roots and leaves, then this raises the possibility that different assembly mechanisms operate on leaf and root microbiomes. My working hypothesis is that leaf microbiomes are stochastically assembled from ocean water, whereas there appears to be non-random assembly on the roots -- perhaps due to habitat filtering onto the host or into the biological network. Glancing at alpha-diversity patterns supports this idea:
+I analyzed community composition using two different metrics: Bray-Curtis, which weighs communities based on differences in the relative abundance of OTUs and Unifrac, which weighs communities based on the phylogenetic distance between OTUs that are present in the system. Because they yield nearly identical patterns in beta-diversity, we can conclude that the major differences between communities sampled from different habitats (i.e., leaf, root, water or sediment) were due to differences in the presence and abundance of phylogenetically distinct OTUs. Moreover, these differences were large between soil and root communities but not between water and leaf communities. If we assume that soil and water are the major colonist sources for roots and leaves, then this raises the possibility that different assembly mechanisms operate on leaf and root microbiomes. One possibility is that leaf microbiomes are stochastically assembled from ocean water, whereas non-random assembly mechanisms operate on the root. Alpha-diversity patterns are at least consistent with this idea.
 
 ```python
 ## alpha diversity
@@ -180,7 +180,7 @@ ggplot(data = alpha.sum, aes(x = as.factor(sample.type), y = s, fill = as.factor
 #### Figure 3
 ![Fig. 3](figures/Fig_3.jpg "Alpha Diversity")
 
-Here, error bars represent 2 standard errors. ANOVA reveals that alpha diversity is different between roots and soil, but not between leaves and water. This adds a little extra support to our working hypothesis.
+Here, error bars represent 2 standard errors. ANOVA reveals that alpha diversity is different between roots and soil, but not between leaves and water.
 
 ```python
 alpha.mod <- lm(s ~ as.factor(sample.type), data = alpha.frame)
@@ -313,49 +313,57 @@ ad.frame <- do.call('rbind', temp.ad.frame)
 #### Summary of section 2b
 Results of the analyses are [here.](./output/permanova_results.txt)
 
-Three features of the site-level host plant community - *genotype richness*, *above ground biomass* and *shoot density* - are significantly associated with microbial community composition in roots, sediment *and* water but **NOT** on the seagrass leaves. Mesograzer biomass was significantly associated with below-ground microbial community compositions, i.e., roots and sediment, but not above-ground ones. I did not detect relationships between microbiome composition and any of the other covariates. The observation that leaf microbiomes do not exhibit significant relationships between any of the measured features is at least consistent with the hypothesis of stochastic assembly on the seagrass leaf.
+Three features of the site-level host plant population - *genotype richness*, *above ground biomass* and *shoot density* - are significantly associated with microbial community composition in roots, sediment *and* water but **NOT** on the seagrass leaves. Mesograzer biomass was significantly associated with below-ground microbial community compositions, i.e., roots and sediment, but not above-ground ones. I did not detect relationships between microbiome composition and any of the other covariates. The observation that leaf microbiomes do not exhibit significant relationships with any of the measured features is at least consistent with the hypothesis of stochastic assembly on the seagrass leaf.
 
-### 3. Host- and environment-associated taxa
-So far we've determined that microbiomes from different sample types exhibit different community compositions, and that these are correlated to features of the host and environment in different ways. We also know that this is the result of changes in the presence and relative abundance of phylogenetically diverse OTUs. I would like to know if particular taxa are responsible for these patterns. I would also like to know why all communities overlap a bit in composition, or whether there are cosmopolitan microbes that are omnipresent. Since routine *ANOVA* is fairly robust to heteroskedacticity, it is a good candidate for identifying taxa that are significantly enriched in particular habitats. First, I'll logit(0.005 + *x*) transform OTU abundances, and perform *ANOVA* tests to determine which OTUs have significantly higher abundances on the host versus the environment.
+### 3. Host-associated and -repelled taxa
+So far we've determined that microbiomes from different sample types exhibit different community compositions, and that these are correlated to features of the host and environment in different ways. We also know that this is the result of changes in the presence and relative abundance of phylogenetically diverse OTUs. I would like to know if particular taxa are responsible for these patterns. I would also like to know why all communities overlap a bit in composition, or whether there are cosmopolitan microbes that are omnipresent. From the Moore Foundation proposal:
+
+- Is there a ‘core microbiome’ or set of commonly occurring microorganisms that appear in all assemblages associated with seagrasses?
+
+Routine *ANOVA* is fairly robust to heteroskedacticity, but is generally discouraged for zero-inflated datasets like these. Instead, I'll model the logit-transformed probability of observing each OTU on the host by fitting generalized linear models with binomial error distributions and logit link functions. After adjusting p-values for multiple tests (I like Benjamini-Hochberg), this will allow me to determine which OTUs are significantly more or less likely to be observed on the *Z. marina* host. I'll call these host-associated and host-repelled taxa, respectively. Since I already merged metadata with biom tables for PERMANOVAs, I'll recycle that data frame.
 
 ```python
-## enriched taxa
-logitTransform <- function(p) { log(p/(1-p)) }
-enrich.dat <- adonis.dat
-
+pres.dat <- adonis.dat[, -c((ncol(adonis.dat) - 15):ncol(adonis.dat))]
 ## drop OTUs appearing in < 10 sites for being underpowered
-if(length(which(colSums(enrich.dat != 0) < 10)) > 0){
-  enrich.dat <- enrich.dat[, -c(which(colSums(enrich.dat != 0) < 10))] ## removes sites with less than k reads
+if(length(which(colSums(pres.dat != 0) < 10)) > 0){
+  pres.dat <- pres.dat[, -c(which(colSums(pres.dat != 0) < 10))] ## removes sites with less than k reads
 }
 
-enrich.frame <- data.frame('otu' = names(enrich.dat[, -c((ncol(enrich.dat) - 14):ncol(enrich.dat))]), 'coef' = rep(NA), 'p' = rep(NA), 'effect' = rep(NA))
-for(u in 1:(ncol(enrich.dat) - 14)){
+## turn into pres/abs
+pres.dat[pres.dat > 0] <- 1
+pres.dat <- cbind(pres.dat, adonis.dat[, (ncol(adonis.dat) - 15):ncol(adonis.dat)])
+
+pres.frame <- data.frame('otu' = names(pres.dat[, -c((ncol(pres.dat) - 15):ncol(pres.dat))]), 'coef' = rep(NA), 'p' = rep(NA), 'effect' = rep(NA))
+for(u in 1:(ncol(pres.dat) - 15)){
   tryCatch({
-    enrich.dat$aov.otu <- logitTransform(0.005 + enrich.dat[, u])
-    enrich.frame$otu[u] <- names(enrich.dat)[u]
-    temp.mod <- lm(aov.otu ~ as.factor(host.env), data = enrich.dat)
-    sig <- which(summary(temp.mod)$coefficients[, 4] <= 0.05)
-    enrich.frame$p[u] <- summary(temp.mod)$coefficients[2, 4]
-    enrich.frame$coef[u] <- summary(temp.mod)$coefficients[2, 1]
-    enrich.frame$effect[u] <- names(summary(temp.mod)$coefficients[, 4])[2]
+
+    ## probability glm
+    pres.dat$glm.otu <- pres.dat[, u]
+    temp.glm <- glm(glm.otu ~ as.factor(host.env), data = pres.dat, family = 'binomial')
+    pres.frame$p[u] <- summary(temp.glm)$coefficients[2, 4]
+    pres.frame$coef[u] <- summary(temp.glm)$coefficients[2, 1]
+    pres.frame$effect[u] <- names(summary(temp.glm)$coefficients[, 4])[2]
+    
   }, error = function(e){})
-  if(u == 1){bar.vec <- c(na.omit(seq(1:(ncol(enrich.dat)))[1:(ncol(enrich.dat)) * round((ncol(enrich.dat)) / 10)]))
+  if(u == 1){bar.vec <- c(na.omit(seq(1:(ncol(pres.dat)))[1:(ncol(pres.dat)) * round((ncol(pres.dat)) / 10)]))
              cat('|')}
   if(u %in% bar.vec == TRUE){cat('=====|')}
 }
 ```
 
-Then, I'll adjust the p-values for multiple comparisons using the Benjamini-Hochberg procedure, and filter the table to include only taxa that are significantly enriched or depressed on the host.
+Then, I'll adjust the p-values for multiple comparisons using the Benjamini-Hochberg procedure, and filter the table to include only taxa that are significantly enriched or depressed on the host. I'll set my significance threshold at *P* = 0.05.
 
 ```python
-enrich.frame <- na.omit(enrich.frame)
-enrich.frame$p.adjust <- p.adjust(enrich.frame$p, method = 'fdr')
-enrich.frame <- subset(enrich.frame, p.adjust <= 0.01)
+pres.frame <- na.omit(pres.frame)
+pres.frame$p.adjust <- p.adjust(pres.frame$p, method = 'fdr')
+pres.frame <- subset(pres.frame, p.adjust <= 0.05)
 ```
 
-There are 179 OTUs (out of more than 4100) that are either significantly enriched or depressed on the seagrass host. Tables describing *host-associated* OTUs can be found [here](./output/host_associated_otus.txt), while *environmental* OTUs can be found [here](./output/env_associated_otus.txt). It would be neat to know if host-associated OTUs share any particular functions. This might be possible with PICRUST, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur metabolism. The 84 host-associated OTUs are represented by 28 unique taxonomic orders and 17 classes, suggesting a fairly diverse potential core seagrass microbiome. The 95 taxa that are significantly depressed on seagrass hosts span 23 unique orders and 18 classes. The remaining ~4000 OTUs detected by our methods are probably transient colonists or marine habitat generalists that can tolerate conditions on both the host and in the environment.
+There are 191 OTUs (out of more than 4200) that are either significantly more or less likely to be present on the seagrass host compared to the environment. Tables describing *host-associated* OTUs can be found [here](./output/host_associated_otus.txt), while *host-repelled* OTUs can be found [here](./output/host_repelled_otus.txt). The 87 host-associated OTUs are represented by 24 unique taxonomic orders and 15 classes, suggesting a fairly phylogenetically diverse potential core seagrass microbiome. The 104 OTUs that are significantly less likely to be observed on seagrass hosts span 26 unique orders and 18 classes. The remaining 4000+ OTUs detected by our sequencing methods are probably transient colonists or marine habitat generalists that can tolerate conditions on both the host and the environment.
 
-## 2a. Visualizing host- and environment-associated microbes with association networks
+It would be neat to know if host-associated OTUs share any functional traits. This might be possible with PICRUSt, although we ought to interpret results with caution. Just scanning the taxa, it appears many of the host-associated microbes are involved in sulfur metabolism. 
+
+#### 3a. Visualizing host-associated and -repelled microbes with association networks
 Let's visualize the microbiomes of leaves, roots, sediment and water using association networks. Here, the network nodes represent OTUs, and the edges are defined as significant correlations between taxa abundances. Because we are dealing with compositional data, I will compute correlations using the renormalization and bootstrapping procedure described by [Faust et al. (2012)](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002606). I'll be coloring the nodes according to their classifications (either host- or environment-associated) ascribed in the previous section. The size of the node will be proportional to its degree. And, the edge width will be proportional to the strength of correlation.
 
 First, let's subset our original BIOM table for taxa that are present in at least 10 samples. This is to avoid underpowered correlations among rare taxa.
