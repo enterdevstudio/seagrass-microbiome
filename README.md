@@ -1,4 +1,4 @@
-# The ZEN Microbiome Project <img src="figures/plant_vec.jpg" width=100, height=122)>
+# <img src="figures/plant_vec.jpg" width=100, height=122)> The ZEN Microbiome Project <img src="figures/plant_vec.jpg" width=100, height=122)>
 
 > Ashkaan K Fahimipour
 
