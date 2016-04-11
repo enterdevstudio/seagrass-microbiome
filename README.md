@@ -1,10 +1,9 @@
-# <img src="figures/plant_vec.jpg" width=100, height=122)> The ZEN Microbiome Project <img src="figures/plant_vec.jpg" width=100, height=122)>
+# <img src="figures/plant_vec.jpg" width=50, height=61)> The ZEN Microbiome Project
 
 > Ashkaan K Fahimipour
+> April 11, 2016
 
-April 11, 2016
-
-### 1. Introduction
+### 1. Introduction 
 The first step in understanding the symbiotic relationship between seagrass microbes and their host is to characterize the baseline microbiota and the differences that are associated with host genotype and environment. In the Moore Foundation proposal, we proposed to address the following set of questions:
 
 - How much is microbial community composition influenced by genetic and ecological variation in the host, and is this different for different host tissues?
