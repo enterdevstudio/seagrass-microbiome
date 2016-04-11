@@ -1,10 +1,8 @@
-# The ZEN Microbiome Project 
+# The ZEN Microbiome Project <img src="figures/plant_vec.jpg" width=100, height=122)>
 
 > Ashkaan K Fahimipour
 
 April 11, 2016
-
-![Logo](figures/plant_vec.jpg "ZMP")
 
 ### 1. Introduction
 The first step in understanding the symbiotic relationship between seagrass microbes and their host is to characterize the baseline microbiota and the differences that are associated with host genotype and environment. In the Moore Foundation proposal, we proposed to address the following set of questions:
