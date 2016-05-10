@@ -52,7 +52,7 @@ tax.2 <- tax.to.long(tax.trim)
 dont.use <- meta$SampleID[which(meta$SampleType == 'Epiphyte')]
 dat <- dat[, -which(names(dat) %in% dont.use)]
 
-## remove OTUs that are never sampled after rarefication
+## remove OTUs that are never sampled after rarefaction
 dat <- dat[-which(rowSums(dat != 0) == 0), ]
 
 ## remove sites with no reads
@@ -61,24 +61,22 @@ if(length(which(colSums(dat != 0) < 1)) > 0){
 }
 ```
 
-Finally, I'll normalize and `log 1 + x` transform my BIOM table for analysis downstream.
+Finally, I'll normalize and `cube-root` transform my BIOM table for analysis downstream. I found that this transformation yielded the most reliable ordination.
 
 ```r
 ## add relative abundances to new biom table
 dat.rel <- t(t(dat)/rowSums(t(dat)))
 
 ## transform data
-dat.rel.trans <- log(1 + dat.rel)
+dat.rel.trans <- dat.rel^(1/3)
 ```
 
 #### 2a. Community Ordination
-I want to get an initial sense of bacterial community composition across our different sample types (Leaf, Root, Sediment and Water). To do this, I'm first going to compute Canberra *distances* of `log 1 + x` transformed relative abundances between community pairs. I'll then visualize these in 2-dimensions using nonmetric multidimensional scaling.
-
-
+I want to get an initial sense of bacterial community composition across our different sample types (Leaf, Root, Sediment and Water). To do this, I'm first going to compute Canberra *distances* of `cube-root` transformed relative abundances between community pairs. I'll then visualize these in 2-dimensions using nonmetric multidimensional scaling (left-hand figure). I'll repeat this for nonweighted Unifrac distances computed in *QIIME* (right-hand figure).
 
 #### Figure 1a
 
-<img src="figures/fig-1a.jpg" width=400, height=275)>
+<img src="figures/fig-1a.jpg" width=400, height=275)> <img src="figures/fig-1b.jpg" width=400, height=275)>
 
 The points in Fig. 1a represent microbial communities, colored by sample type. Points that are closer together in NMDS space have more similar bacterial communities, or lower beta-diversity. The ellipses represent 95% confidence intervals. The ordination stress was `0.196`, indicating that an acceptable solution was found. There is a clear pattern of differentiation among microbial communities found on different parts of the plant and environment. Roughly, the *x*-axis seperates above- and belowground microbiomes, while the *y*-axis seperates plant-associated communities from environmental ones (Fig. 3). Moreover, root and sediment microbiomes have higher beta-diversity than do leaves and water; there is clear seperation between root and soil microbiomes in NMDS space, and high overlap between leaf and water communities. Assuming that water and sediment are the major sources of colonists for leaves and roots respectively, this would be worth exploring further.
 
