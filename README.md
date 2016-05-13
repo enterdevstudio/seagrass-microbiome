@@ -42,7 +42,6 @@ For all OTUs [defining the core microbiome](./output/OTU-associations.txt), I BL
 #### 2d. Bayesian detection of habitat sources
 Results and figures showing that water is a major source of colonists for leaves, but that sediment only contributes in small part to the root microbiome.
 
-... coming up ...
-
-
+#### Figure 4
+<img src="figures/fig-4.jpg" width=1500, height=500)>
 
