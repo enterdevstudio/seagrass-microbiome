@@ -31,15 +31,17 @@ I analyzed beta-diversity in community composition using two different metrics: 
 Here, I fit generalized linear models with binomial error distributions and logit link functions to the data in order to determine which OTUs were significantly associated with different sample types. I fit a series of models (one for each sample type) as a function of the scaled relative abundance of each OTU using a one-vs-all scheme. I adjusted p-values for multiple comparisons using the Benjamini-Hochberg procedure, and selected the model with a q-value < 0.01 and the largest positive regression coefficient as the strongest association for each OTU. The analysis reveals about 1100 OTUs with non-random habitat associations. This table can be [found here](./output/OTU-associations.txt). I propose that the OTUs significantly associated with Leaf and Root communities comprise their *'core'* microbiomes. Scanning that taxon list, it appears for instance that sulfur metabolism is an important function for the seagrass root microbiome. Fig. 2 shows the relative habitat associations for Phyla detected in our samples.
 
 #### Fig. 2
-<img src="figures/fig-2.jpg" width=300, height=250)>
+<img src="figures/fig-2.jpg" width=400, height=320)>
 
 #### 2c. Metabolic modeling reveals potential ecology
-For all OTUs [defining the core microbiome](./output/OTU-associations.txt), I BLASTed their 16s sequences against a database of 16s sequences for all taxa with whole genomes sequenced in the NCBI database. I then downloaded and annotated genomes with at least a 91% sequence similarity (approximately family-level similarity) using modelSEED and generated a topological reaction network for each OTU fulfilling these criteria. I then looked at the potential for cooperation among core OTUs in each sample by computing the fraction of exogenously-acquired compounds (defined in [this paper](http://www.pnas.org/content/110/31/12804.full)) that are synthesized by other members of the community. Fig. 3 shows the mean and standard errors for potential cooperation for all communities. A high degree of variability is visible for the leaves.
+For all OTUs [defining the core microbiome](./output/OTU-associations.txt), I BLASTed their 16s sequences against a database of 16s sequences for all taxa with whole genomes sequenced in the NCBI database. I then downloaded and annotated genomes with at least a 91% sequence similarity (approximately family-level similarity) using modelSEED and generated a topological reaction network for each OTU fulfilling these criteria. I then looked at the potential for cooperation among core OTUs in each sample by computing the fraction of exogenously-acquired compounds (defined in [this paper](http://www.pnas.org/content/110/31/12804.full)) that are synthesized by other members of the community. Fig. 3 shows the mean and standard errors for potential cooperation for all communities. A high degree of variability is visible for the leaves. We should discuss this in person, but I believe it recapitulates a lot of the things we've talked about.
 
-#### Figure 4
+#### Figure 3
 <img src="figures/fig-3.jpg" width=450, height=280)>
 
 #### 2d. Bayesian detection of habitat sources
+Results and figures showing that water is a major source of colonists for leaves, but that sediment only contributes in small part to the root microbiome.
+
 ... coming up ...
 
 
